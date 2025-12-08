@@ -1,6 +1,6 @@
 const BASE_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://utk-project04-api.onrender.com'
+    ? 'https://utk-project04.onrender.com'
     : '';
 
 const api = {
