@@ -8,6 +8,18 @@ function DashboardPage({ user, onLogout }) {
   const [newQuestion, setNewQuestion] = useState('');
   const [error, setError] = useState('');
 
+  // ✅ NEW STATE FOR ANSWERS
+  const [answers, setAnswers] = useState({});
+  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [newAnswer, setNewAnswer] = useState('');
+
+  // ✅ LOAD ANSWERS FOR A QUESTION
+  const loadAnswers = async (questionId) => {
+    setActiveQuestion(questionId);
+    const data = await api.getAnswers(questionId);
+    setAnswers((prev) => ({ ...prev, [questionId]: data }));
+  };
+
   useEffect(() => {
     api
       .getCategories()
@@ -18,6 +30,9 @@ function DashboardPage({ user, onLogout }) {
   const loadQuestions = (category) => {
     setSelectedCategory(category);
     setError('');
+    setAnswers({});
+    setActiveQuestion(null);
+
     api
       .getQuestions(category._id)
       .then(setQuestions)
@@ -37,6 +52,29 @@ function DashboardPage({ user, onLogout }) {
       );
       setQuestions((prev) => [...prev, created]);
       setNewQuestion('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // ✅ POST A NEW ANSWER
+  const handleAddAnswer = async (e) => {
+    e.preventDefault();
+    if (!newAnswer.trim() || !activeQuestion) return;
+
+    try {
+      const created = await api.addAnswer(
+        user.token,
+        newAnswer.trim(),
+        activeQuestion
+      );
+
+      setAnswers((prev) => ({
+        ...prev,
+        [activeQuestion]: [...(prev[activeQuestion] || []), created],
+      }));
+
+      setNewAnswer('');
     } catch (err) {
       setError(err.message);
     }
@@ -89,20 +127,58 @@ function DashboardPage({ user, onLogout }) {
 
               <ul className="question-list">
                 {questions.map((q) => (
-                  <li key={q._id}>
-                    <div className="question-text">{q.text}</div>
-                    <div className="question-meta">
-                      by {q.user?.username || 'Unknown'} on{' '}
-                      {new Date(q.createdAt).toLocaleString()}
+                  <li key={q._id} style={{ marginBottom: '16px' }}>
+                    <div
+                      style={{ cursor: 'pointer', fontWeight: 'bold' }}
+                      onClick={() => loadAnswers(q._id)}
+                    >
+                      {q.text}
                     </div>
+
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      by {q.user?.username || 'Unknown'}
+                    </div>
+
+                    {/* ✅ DISPLAY ANSWERS */}
+                    {answers[q._id] && answers[q._id].length > 0 && (
+                      <ul style={{ marginTop: '8px' }}>
+                        {answers[q._id].map((a) => (
+                          <li key={a._id} style={{ marginBottom: '6px' }}>
+                            <strong>{a.user?.username}:</strong> {a.text}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* ✅ ANSWER FORM (ONLY FOR ACTIVE QUESTION) */}
+                    {activeQuestion === q._id && (
+                      <form
+                        onSubmit={handleAddAnswer}
+                        style={{ marginTop: '8px' }}
+                      >
+                        <textarea
+                          value={newAnswer}
+                          onChange={(e) =>
+                            setNewAnswer(e.target.value)
+                          }
+                          placeholder="Write a response..."
+                        />
+                        <button type="submit">Post Answer</button>
+                      </form>
+                    )}
                   </li>
                 ))}
+
                 {questions.length === 0 && (
                   <li className="placeholder">No questions yet.</li>
                 )}
               </ul>
 
-              <form onSubmit={handleAddQuestion} className="new-question-form">
+              {/* ✅ ADD QUESTION (UNCHANGED) */}
+              <form
+                onSubmit={handleAddQuestion}
+                className="new-question-form"
+              >
                 <textarea
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}

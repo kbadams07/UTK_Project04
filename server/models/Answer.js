@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
-const questionSchema = new mongoose.Schema(
+const answerSchema = new mongoose.Schema(
   {
     text: { type: String, required: true },
-    category: {
+    question: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: 'Question',
       required: true,
     },
     user: {
@@ -17,4 +17,4 @@ const questionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Question', questionSchema);
+module.exports = mongoose.model('Answer', answerSchema);

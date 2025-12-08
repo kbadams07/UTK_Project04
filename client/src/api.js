@@ -1,6 +1,6 @@
 const BASE_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://utk-project04.onrender.com'
+    ? 'https://utk-project04-api.onrender.com'
     : '';
 
 const api = {
@@ -13,7 +13,7 @@ const api = {
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Login failed');
-    return data; // { token, username }
+    return data;
   },
 
   async register(payload) {
@@ -24,19 +24,12 @@ const api = {
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-      const error = new Error(data.message || 'Registration failed');
-      error.field = data.field;
-      throw error;
-    }
-
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
     return data;
   },
 
   async getCategories() {
     const res = await fetch(`${BASE_URL}/api/categories`);
-    if (!res.ok) throw new Error('Failed to load categories');
     return res.json();
   },
 
@@ -44,7 +37,13 @@ const api = {
     const res = await fetch(
       `${BASE_URL}/api/questions?categoryId=${categoryId}`
     );
-    if (!res.ok) throw new Error('Failed to load questions');
+    return res.json();
+  },
+
+  async getAnswers(questionId) {
+    const res = await fetch(
+      `${BASE_URL}/api/answers?questionId=${questionId}`
+    );
     return res.json();
   },
 
@@ -58,10 +57,20 @@ const api = {
       body: JSON.stringify({ text, categoryId }),
     });
 
-    const data = await res.json();
+    return res.json();
+  },
 
-    if (!res.ok) throw new Error(data.message || 'Failed to add question');
-    return data;
+  async addAnswer(token, text, questionId) {
+    const res = await fetch(`${BASE_URL}/api/answers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text, questionId }),
+    });
+
+    return res.json();
   },
 };
 
